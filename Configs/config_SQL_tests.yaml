@@ -1,0 +1,38 @@
+tests:
+  # Smoke Tests - Basic existence checks
+  - name: "Check if dwh_clients table exists in dwh layer"
+    sql: "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dwh' AND TABLE_NAME = 'dwh_clients'"
+    expected: 1
+    test_type: "smoke"
+    description: "Verify that the dwh_clients table exists in the database"
+
+  - name: "Check if dwh_products table exists in dwh layer"
+    sql: "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dwh' AND TABLE_NAME = 'dwh_products'"
+    expected: 1
+    test_type: "smoke"
+    description: "Verify that the dwh_products table exists in the database"
+
+  - name: "Check if dwh_sales table exists in dwh layer"
+    sql: "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dwh' AND TABLE_NAME = 'dwh_sales'"
+    expected: 1
+    test_type: "smoke"
+    description: "Verify that the dwh_sales table exists in the database"
+
+  # Critical Path Tests - Business logic validation
+  - name: "Validate dwh.dwh_sales table has data"
+    sql: "SELECT COUNT(DISTINCT(client_id,channel_id,product_id,order_created)) FROM dwh.dwh_sales;"
+    expected_min: 1
+    test_type: "critical"
+    description: "Ensure users table contains correct sale transaction data"
+
+  - name: "Validate products have valid prices"
+    sql: "SELECT COUNT(*) FROM dwh.dwh_products WHERE product_cost <= 0 OR product_cost IS NULL"
+    expected: 0
+    test_type: "critical"
+    description: "Ensure all products have valid positive prices"
+
+  - name: "Validate main dashboard data integrity"
+    sql: "SELECT COUNT(*) FROM dm.dm_main_dashboard dm LEFT JOIN dwh.dwh_sales dwh ON dm.id=dwh.sale_id JOIN dwh.dwh_clients c on dwh.client_id = c.client_id WHERE dm.id IS NULL;"
+    expected: 0
+    test_type: "critical"
+    description: "Ensure all sales in dashboard have valid client references"
